@@ -5304,9 +5304,15 @@ void ZedCamera::threadFunc_zedGrab()
       // <---- Params Debug info
 
       // ----> Safe grab
+      bool recording;
+      {
+        std::lock_guard<std::mutex> rec_lock(mRecMutex);
+        recording = mRecording;
+      }
       {
         std::lock_guard<std::mutex> grab_lock(mGrabMutex);
-        if (isDepthRequired() || isPosTrackingRequired()) {
+        // SVO frames are only written by `grab()`: `read()` leaves the recording empty
+        if (isDepthRequired() || isPosTrackingRequired() || recording) {
           DEBUG_STREAM_GRAB("Grab thread: grabbing...");
           mGrabStatus = mZed->grab(mRunParams);  // Process the full pipeline with depth
 
